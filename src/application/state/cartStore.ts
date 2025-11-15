@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { CartItem, CartTotals } from "../../domain/cart";
+import type { CartItem } from "../../domain/cart";
 import type { Product, ProductVariant } from "../../domain/product";
 
 interface CartState {
@@ -16,20 +16,22 @@ interface CartState {
   removeItem: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
   clear: () => void;
-
-  getTotals: () => CartTotals;
 }
 
 export const useCartStore = create<CartState>()(
   persist(
-    immer((set, get) => ({
+    immer((set) => ({
       items: [],
 
       addItem: ({ product, variant, quantity }) => {
         const id = `${product.id}-${variant?.id ?? "default"}`;
         set((s) => {
           const existing = s.items.find((i) => i.id === id);
-          const price = variant?.salePrice ?? variant?.price ?? product.salePrice ?? product.price;
+          const price =
+            variant?.salePrice ??
+            variant?.price ??
+            product.salePrice ??
+            product.price;
 
           if (existing) {
             existing.quantity += quantity;
@@ -72,18 +74,6 @@ export const useCartStore = create<CartState>()(
         set((s) => {
           s.items = [];
         });
-      },
-
-      getTotals: () => {
-        const { items } = get();
-        return items.reduce<CartTotals>(
-          (acc, item) => {
-            acc.subtotal += item.unitPrice * item.quantity;
-            acc.itemsCount += item.quantity;
-            return acc;
-          },
-          { subtotal: 0, itemsCount: 0 }
-        );
       },
     })),
     {
