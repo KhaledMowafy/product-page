@@ -1,75 +1,172 @@
-# React + TypeScript + Vite
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19+-61DAFB?logo=react&logoColor=white&style=for-the-badge" />
+  <img src="https://img.shields.io/badge/TypeScript-5+-3178C6?logo=typescript&style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Zustand-State--Management-blueviolet?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/TailwindCSS-3+-06B6D4?logo=tailwindcss&style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Immer-Immutable--State-52b788?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Vite-Fast--Build-646CFF?logo=vite&style=for-the-badge" />
+</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Overview
 
-Currently, two official plugins are available:
+This project is an implementation of an E-commerce Product Detail Page based on a Figma design.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### It demonstrates:
 
-## React Compiler
+- Clean Architecture principles
+- Reactive state management using Zustand + Immer
+- Persistent shopping cart
+- Dynamic product variations (color, size, etc.)
+- Mobile & desktop responsive layouts
+- A full cart drawer with quantity updates
+- HTML product description with “See more” functionality
+- API integration with EasyOrders using a Repository pattern
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## 🧱 Architecture
+### 🏛️ Clean Architecture (Frontend)
 
-Note: This will impact Vite dev & build performances.
+This project splits the codebase into Domain, Application, Infrastructure, and Presentation layers.
 
-## Expanding the ESLint configuration
+Architecture Diagram
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```mermaid
+flowchart TD
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+A[Presentation Layer\nReact Components\nPages, Layout, UI] --> B[Application Layer\nZustand Stores\nSelectors, Business Rules]
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+B --> C[Infrastructure Layer\nHttpProductRepository\nAPI Client]
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+C --> D[Domain Layer\nEntities: Product, Variant, CartItem]
+
+D --> C
+C --> B
+B --> A
+```
+This ensures UI, state, API logic, and entities are cleanly separated.
+
+## 📂 Folder Structure
+```
+src/
+  domain/
+    product.ts
+    cart.ts
+
+  application/
+    state/
+      productStore.ts
+      cartStore.ts
+
+    repositories/
+      ProductRepository.ts
+
+  infrastructure/
+    http/
+      apiClient.ts
+    HttpProductRepository.ts
+
+  presentation/
+    layouts/
+      Layout.tsx
+
+    pages/
+      ProductDetailPage.tsx
+
+    components/
+      product/
+        ProductGallery.tsx
+        ProductInfo.tsx
+        VariationSelector.tsx
+        QuantitySelector.tsx
+        ProductDescriptionHtml.tsx
+      cart/
+        CartDrawer.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🧰 Key Features Implemented
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 1️⃣ Product Detail Page UI
+- Image gallery
+- Variations
+- Price + Sale price
+- Quantity selector
+- Add to Cart
+- Responsive layout (Mobile & Desktop)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2️⃣ Layout (Header System)
+Responsive navigation:
+- Desktop → search, categories, wishlist, cart
+- Mobile → search, cart badge, hamburger menu
+
+### 3️⃣ Cart Drawer (Slide-out Panel)
+
+```mermaid
+sequenceDiagram
+  participant UI as CartDrawer Component
+  participant Store as Zustand Cart Store
+  participant Local as LocalStorage
+
+  UI->>Store: setQuantity(id, +1)
+  Store->>Local: persist updated cart
+  Store-->>UI: items[], subtotal, itemsCount
+
+  UI->>Store: removeItem(id)
+  Store->>Local: persist updated cart
+  Store-->>UI: recomputed totals
 ```
+
+### 4️⃣ Product Description — "See More"
+
+HTML description is:
+- Cleanly truncated using plain text extraction
+- Expanded to full HTML via dangerouslySetInnerHTML
+- Mobile-safe (no overflow)
+
+### 5️⃣ API Integration (Repository Pattern)
+```mermaid
+flowchart LR
+
+UI[ProductDetailPage] -->|calls| Store[getProduct slug]
+Store --> Repo[HttpProductRepository]
+Repo --> API[EasyOrders API]
+API --> Repo
+Repo --> Store
+Store --> UI
+```
+
+### 🧠 Zustand Store: Cart Logic
+```mermaid
+classDiagram
+    class CartStore {
+      +CartItem[] items
+      +addItem(product, variant, qty)
+      +removeItem(id)
+      +setQuantity(id, qty)
+      +clear()
+    }
+
+    class CartItem {
+      +string id
+      +string productName
+      +number unitPrice
+      +number quantity
+      +string imageUrl
+      +string variantLabel?
+    }
+
+    CartStore --> CartItem
+```
+
+### 🧩 Component Hierarchy
+```mermaid
+graph TD
+
+Page[ProductDetailPage] --> Gallery[ProductGallery]
+Page --> Info[ProductInfo]
+Info --> Variations[VariationSelector]
+Info --> Quantity[QuantitySelector]
+Page --> Description[ProductDescriptionHtml]
+Layout --> CartDrawer
+```
+
+
+
