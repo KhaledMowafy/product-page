@@ -11,6 +11,8 @@
 
 This project is an implementation of an E-commerce Product Detail Page based on a Figma design.
 
+live domain: https://frontend-easyorders.vercel.app/
+
 ### It demonstrates:
 
 - Clean Architecture principles
